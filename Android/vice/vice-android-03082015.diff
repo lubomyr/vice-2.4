@@ -1,0 +1,400 @@
+diff -ru orig/vice-2.4/config.sub vice-2.4/config.sub
+--- orig/vice-2.4/config.sub	2010-09-23 02:22:39.000000000 +0000
++++ vice-2.4/config.sub	2014-12-15 16:27:32.000000000 +0000
+@@ -1194,7 +1194,7 @@
+ 	      | -ekkobsd* | -kfreebsd* | -freebsd* | -riscix* | -lynxos* \
+ 	      | -bosx* | -nextstep* | -cxux* | -aout* | -elf* | -oabi* \
+ 	      | -ptx* | -coff* | -ecoff* | -winnt* | -domain* | -vsta* \
+-	      | -udi* | -eabi* | -lites* | -ieee* | -go32* | -aux* \
++	      | -udi* | -eabi* | -androideabi* | -lites* | -ieee* | -go32* | -aux* \
+ 	      | -chorusos* | -chorusrdb* | -cegcc* \
+ 	      | -cygwin* | -pe* | -psos* | -moss* | -proelf* | -rtems* \
+ 	      | -mingw32* | -linux* | -linux-uclibc* | -uxpv* | -beos* | -mpeix* | -udk* \
+diff -ru orig/vice-2.4/src/Makefile.in vice-2.4/src/Makefile.in
+--- orig/vice-2.4/src/Makefile.in	2012-11-02 21:06:53.000000000 +0000
++++ vice-2.4/src/Makefile.in	2015-08-01 18:49:24.000000000 +0000
+@@ -397,7 +397,7 @@
+ LEXLIB = @LEXLIB@
+ LEX_OUTPUT_ROOT = @LEX_OUTPUT_ROOT@
+ LIBOBJS = @LIBOBJS@
+-LIBS = @LIBS@
++LIBS = @LIBS@ -lgnustl_static
+ LINKCC = @LINKCC@
+ LN_S = @LN_S@
+ LTLIBOBJS = @LTLIBOBJS@
+diff -ru orig/vice-2.4/src/arch/sdl/Makefile.am vice-2.4/src/arch/sdl/Makefile.am
+--- orig/vice-2.4/src/arch/sdl/Makefile.am	2012-10-21 01:20:33.000000000 +0000
++++ vice-2.4/src/arch/sdl/Makefile.am	2015-06-30 18:03:31.000000000 +0000
+@@ -175,7 +175,12 @@
+ 	xcbm2_ui.c \
+ 	xpet_ui.c \
+ 	xplus4_ui.c \
+-	xvic_ui.c
++	xvic_ui.c \
++	guichan-gui.cpp \
++	menuLoad_guichan.cpp \
++	menuMessage.cpp \
++	menuSaveState.cpp \
++	sdltruetypefont.cpp
+ 
+ EXTRA_DIST = \
+ 	archdep_amiga.c \
+diff -ru orig/vice-2.4/src/arch/sdl/Makefile.in vice-2.4/src/arch/sdl/Makefile.in
+--- orig/vice-2.4/src/arch/sdl/Makefile.in	2012-11-02 21:06:59.000000000 +0000
++++ vice-2.4/src/arch/sdl/Makefile.in	2015-08-01 21:06:27.000000000 +0000
+@@ -84,7 +84,9 @@
+ 	vkbd.$(OBJEXT) vsidui.$(OBJEXT) vsyncarch.$(OBJEXT) \
+ 	x128_ui.$(OBJEXT) x64_ui.$(OBJEXT) x64dtv_ui.$(OBJEXT) \
+ 	x64sc_ui.$(OBJEXT) xcbm2_ui.$(OBJEXT) xpet_ui.$(OBJEXT) \
+-	xplus4_ui.$(OBJEXT) xvic_ui.$(OBJEXT)
++	xplus4_ui.$(OBJEXT) xvic_ui.$(OBJEXT) guichan-gui.$(OBJEXT) \
++	menuLoad_guichan.$(OBJEXT) menuMessage.$(OBJEXT) \
++	menuSaveState.$(OBJEXT) sdltruetypefont.$(OBJEXT)
+ libarch_a_OBJECTS = $(am_libarch_a_OBJECTS)
+ DEFAULT_INCLUDES = -I.@am__isrc@ -I$(top_builddir)/src
+ depcomp = $(SHELL) $(top_srcdir)/depcomp
+@@ -94,6 +96,11 @@
+ 	$(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS)
+ CCLD = $(CC)
+ LINK = $(CCLD) $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
++CXXCOMPILE = $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) \
++	$(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS)
++CXXLD = $(CXX)
++CXXLINK = $(CXXLD) $(AM_CXXFLAGS) $(CXXFLAGS) $(AM_LDFLAGS) $(LDFLAGS) \
++	-o $@
+ SOURCES = $(libarch_a_SOURCES)
+ DIST_SOURCES = $(libarch_a_SOURCES)
+ RECURSIVE_TARGETS = all-recursive check-recursive dvi-recursive \
+@@ -158,7 +165,7 @@
+ CCASDEPMODE = @CCASDEPMODE@
+ CCASFLAGS = @CCASFLAGS@
+ CCDEPMODE = @CCDEPMODE@
+-CFLAGS = @CFLAGS@
++CFLAGS = @CFLAGS@ -DGUICHAN_GUI
+ CPP = @CPP@
+ CPPFLAGS = @CPPFLAGS@
+ CROSS = @CROSS@
+@@ -546,7 +553,12 @@
+ 	xcbm2_ui.c \
+ 	xpet_ui.c \
+ 	xplus4_ui.c \
+-	xvic_ui.c
++	xvic_ui.c \
++	guichan-gui.cpp \
++	menuLoad_guichan.cpp \
++	menuMessage.cpp \
++	menuSaveState.cpp \
++	sdltruetypefont.cpp
+ 
+ EXTRA_DIST = \
+ 	archdep_amiga.c \
+@@ -579,7 +591,7 @@
+ all: all-recursive
+ 
+ .SUFFIXES:
+-.SUFFIXES: .c .o .obj
++.SUFFIXES: .c .cpp .o .obj
+ $(srcdir)/Makefile.in:  $(srcdir)/Makefile.am  $(am__configure_deps)
+ 	@for dep in $?; do \
+ 	  case '$(am__configure_deps)' in \
+@@ -631,10 +643,14 @@
+ @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/coproc.Po@am__quote@
+ @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/dynlib.Po@am__quote@
+ @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/fullscreen.Po@am__quote@
++@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/guichan-gui.Po@am__quote@
+ @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/hardsid.Po@am__quote@
+ @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/joy.Po@am__quote@
+ @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/kbd.Po@am__quote@
+ @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/lightpendrv.Po@am__quote@
++@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/menuLoad_guichan.Po@am__quote@
++@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/menuMessage.Po@am__quote@
++@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/menuSaveState.Po@am__quote@
+ @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/menu_c128hw.Po@am__quote@
+ @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/menu_c64_common_expansions.Po@am__quote@
+ @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/menu_c64_expansions.Po@am__quote@
+@@ -683,6 +699,7 @@
+ @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/rs232dev.Po@am__quote@
+ @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/rs232net.Po@am__quote@
+ @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/sdlmain.Po@am__quote@
++@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/sdltruetypefont.Po@am__quote@
+ @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/signals.Po@am__quote@
+ @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ui.Po@am__quote@
+ @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/uicmdline.Po@am__quote@
+@@ -718,6 +735,20 @@
+ @am__fastdepCC_TRUE@	$(COMPILE) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tpo -c -o $@ `$(CYGPATH_W) '$<'`
+ @am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/$*.Tpo $(DEPDIR)/$*.Po
+ @AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$<' object='$@' libtool=no @AMDEPBACKSLASH@
++@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
++@am__fastdepCC_FALSE@	$(COMPILE) -c `$(CYGPATH_W) '$<'`
++
++.cpp.o:
++@am__fastdepCC_TRUE@	$(COMPILE) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tpo -c -o $@ $<
++@am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/$*.Tpo $(DEPDIR)/$*.Po
++@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$<' object='$@' libtool=no @AMDEPBACKSLASH@
++@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
++@am__fastdepCC_FALSE@	$(COMPILE) -c $<
++
++.cpp.obj:
++@am__fastdepCC_TRUE@	$(COMPILE) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tpo -c -o $@ `$(CYGPATH_W) '$<'`
++@am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/$*.Tpo $(DEPDIR)/$*.Po
++@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$<' object='$@' libtool=no @AMDEPBACKSLASH@
+ @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+ @am__fastdepCC_FALSE@	$(COMPILE) -c `$(CYGPATH_W) '$<'`
+ 
+diff -ru orig/vice-2.4/src/arch/sdl/archdep_unix.c vice-2.4/src/arch/sdl/archdep_unix.c
+--- orig/vice-2.4/src/arch/sdl/archdep_unix.c	2012-10-21 01:20:33.000000000 +0000
++++ vice-2.4/src/arch/sdl/archdep_unix.c	2014-12-15 16:27:44.000000000 +0000
+@@ -146,18 +146,18 @@
+ 
+ const char *archdep_boot_path(void)
+ {
+-    if (boot_path == NULL) {
+-#ifdef USE_PROC_SELF_EXE
+-        /* known from setup in archdep_init_extra() so just reuse it */
+-        boot_path = lib_stralloc(argv0);
+-#else
+-        boot_path = findpath(argv0, getenv("PATH"), IOUTIL_ACCESS_X_OK);
+-#endif
+-
+-        /* Remove the program name.  */
+-        *strrchr(boot_path, '/') = '\0';
+-    }
+-
++//    if (boot_path == NULL) {
++//#ifdef USE_PROC_SELF_EXE
++//        /* known from setup in archdep_init_extra() so just reuse it */
++//        boot_path = lib_stralloc(argv0);
++//#else
++//        boot_path = findpath(argv0, getenv("PATH"), IOUTIL_ACCESS_X_OK);
++//#endif
++//
++//        /* Remove the program name.  */
++//        *strrchr(boot_path, '/') = '\0';
++//    }
++boot_path = ".";
+     return boot_path;
+ }
+ 
+diff -ru orig/vice-2.4/src/arch/sdl/kbd.c vice-2.4/src/arch/sdl/kbd.c
+--- orig/vice-2.4/src/arch/sdl/kbd.c	2010-09-12 09:35:32.000000000 +0000
++++ vice-2.4/src/arch/sdl/kbd.c	2015-07-30 11:25:04.000000000 +0000
+@@ -111,6 +111,10 @@
+ {
+     int i = 0;
+ 
++    if (key==SDLK_F13) {
++      sdl_vkbd_state=!sdl_vkbd_state;
++      if (sdl_vkbd_state==1) sdl_vkbd_activate();
++    }
+     mod &= (KMOD_CTRL|KMOD_SHIFT|KMOD_ALT|KMOD_META);
+ 
+     if (mod) {
+@@ -323,7 +327,12 @@
+     }
+ 
+     if ((int)(key) == sdl_ui_menukeys[0]) {
++#ifdef GUICHAN_GUI
++	extern int gui_open();
++	int err=gui_open();
++#else
+         sdl_ui_activate();
++#endif
+         return retval;
+     }
+ 
+diff -ru orig/vice-2.4/src/arch/sdl/ui.c vice-2.4/src/arch/sdl/ui.c
+--- orig/vice-2.4/src/arch/sdl/ui.c	2012-10-28 14:41:29.000000000 +0000
++++ vice-2.4/src/arch/sdl/ui.c	2015-07-30 12:31:22.000000000 +0000
+@@ -76,6 +76,9 @@
+ /* Misc. SDL event handling */
+ void ui_handle_misc_sdl_event(SDL_Event e)
+ {
++#ifdef ANDROID
++    SDL_Flip(SDL_GetVideoSurface());
++#endif  
+     switch (e.type) {
+         case SDL_QUIT:
+             DBG(("ui_handle_misc_sdl_event: SDL_QUIT"));
+@@ -132,6 +135,9 @@
+     ui_menu_action_t retval = MENU_ACTION_NONE;
+ 
+     while (SDL_PollEvent(&e)) {
++#ifdef ANDROID
++    SDL_Flip(SDL_GetVideoSurface());
++#endif
+         switch (e.type) {
+             case SDL_KEYDOWN:
+                 retval = sdlkbd_press(e.key.keysym.sym, e.key.keysym.mod);
+diff -ru orig/vice-2.4/src/arch/sdl/uimenu.c vice-2.4/src/arch/sdl/uimenu.c
+--- orig/vice-2.4/src/arch/sdl/uimenu.c	2011-01-26 15:04:18.000000000 +0000
++++ vice-2.4/src/arch/sdl/uimenu.c	2015-07-01 20:35:46.000000000 +0000
+@@ -750,8 +750,9 @@
+     if (vsid_mode && (sdl_vsid_state & SDL_VSID_ACTIVE)) {
+         sdl_vsid_close();
+     }
+-
++#ifndef ANDROID
+     SDL_EnableKeyRepeat(SDL_DEFAULT_REPEAT_DELAY, SDL_DEFAULT_REPEAT_INTERVAL);
++#endif
+     sdl_menu_state = 1;
+     ui_check_mouse_cursor();
+ }
+@@ -762,7 +763,9 @@
+ 
+     sdl_menu_state = 0;
+     ui_check_mouse_cursor();
++#ifndef ANDROID
+     SDL_EnableKeyRepeat(0, 0);
++#endif
+ 
+     /* Do not resume sound if in warp mode */
+     resources_get_int("WarpMode", &warp_state);
+diff -ru orig/vice-2.4/src/arch/sdl/video.c vice-2.4/src/arch/sdl/video.c
+--- orig/vice-2.4/src/arch/sdl/video.c	2012-10-28 19:38:08.000000000 +0000
++++ vice-2.4/src/arch/sdl/video.c	2015-07-31 15:21:14.000000000 +0000
+@@ -55,6 +55,10 @@
+ #include "vsidui_sdl.h"
+ #include "vsync.h"
+ 
++#if defined(ANDROID)
++#include <SDL_screenkeyboard.h>
++#endif
++
+ #ifdef SDL_DEBUG
+ #define DBG(x)  log_debug x
+ #else
+@@ -450,6 +454,68 @@
+ }
+ #endif
+ 
++#ifdef ANDROID
++void onscreen_position()
++{
++    // setup position of on-screen buttons
++    int pos_x_textinput=0;
++    int pos_y_textinput=0;
++    int pos_x_dpad=4;
++    int pos_y_dpad=215;
++    int pos_x_button1=417;
++    int pos_y_button1=278;
++/*    int pos_x_button2=240;
++    int pos_y_button2=11;
++    int pos_x_button3=300;
++    int pos_y_button3=11;
++    int pos_x_button4=361;
++    int pos_y_button4=10;
++    int pos_x_button5=421;
++    int pos_y_button5=9;*/
++    int pos_x_button2=361;
++    int pos_y_button2=10;
++    int pos_x_button3=421;
++    int pos_y_button3=9;
++    // apply position of on-screen buttons
++    SDL_Rect pos_textinput, pos_dpad, pos_button1, pos_button2, pos_button3, pos_button4, pos_button5, pos_button6;
++    pos_textinput.x = pos_x_textinput*(SDL_ListModes(NULL, 0)[0]->w/(float)480);
++    pos_textinput.y = pos_y_textinput*(SDL_ListModes(NULL, 0)[0]->h/(float)360);
++    pos_textinput.h=SDL_ListModes(NULL, 0)[0]->h / (float)10;
++    pos_textinput.w=pos_textinput.h;
++    SDL_ANDROID_SetScreenKeyboardButtonPos(SDL_ANDROID_SCREENKEYBOARD_BUTTON_TEXT, &pos_textinput);
++    pos_dpad.x = pos_x_dpad*(SDL_ListModes(NULL, 0)[0]->w/(float)480);
++    pos_dpad.y = pos_y_dpad*(SDL_ListModes(NULL, 0)[0]->h/(float)360);
++    pos_dpad.h=SDL_ListModes(NULL, 0)[0]->h / (float)2.5;
++    pos_dpad.w=pos_dpad.h;
++    SDL_ANDROID_SetScreenKeyboardButtonPos(SDL_ANDROID_SCREENKEYBOARD_BUTTON_DPAD, &pos_dpad);
++    pos_button1.x = pos_x_button1*(SDL_ListModes(NULL, 0)[0]->w/(float)480);
++    pos_button1.y = pos_y_button1*(SDL_ListModes(NULL, 0)[0]->h/(float)360);
++    pos_button1.h=SDL_ListModes(NULL, 0)[0]->h / (float)4;
++    pos_button1.w=pos_button1.h;
++    SDL_ANDROID_SetScreenKeyboardButtonPos(SDL_ANDROID_SCREENKEYBOARD_BUTTON_0, &pos_button1);
++    pos_button2.x = pos_x_button2*(SDL_ListModes(NULL, 0)[0]->w/(float)480);
++    pos_button2.y = pos_y_button2*(SDL_ListModes(NULL, 0)[0]->h/(float)360);
++    pos_button2.h=SDL_ListModes(NULL, 0)[0]->h / (float)6;
++    pos_button2.w=pos_button2.h;
++    SDL_ANDROID_SetScreenKeyboardButtonPos(SDL_ANDROID_SCREENKEYBOARD_BUTTON_1, &pos_button2);
++    pos_button3.x = pos_x_button3*(SDL_ListModes(NULL, 0)[0]->w/(float)480);
++    pos_button3.y = pos_y_button3*(SDL_ListModes(NULL, 0)[0]->h/(float)360);
++    pos_button3.h=SDL_ListModes(NULL, 0)[0]->h / (float)6;
++    pos_button3.w=pos_button3.h;
++    SDL_ANDROID_SetScreenKeyboardButtonPos(SDL_ANDROID_SCREENKEYBOARD_BUTTON_2, &pos_button3);
++/*    pos_button4.x = pos_x_button4*(SDL_ListModes(NULL, 0)[0]->w/(float)480);
++    pos_button4.y = pos_y_button4*(SDL_ListModes(NULL, 0)[0]->h/(float)360);
++    pos_button4.h=SDL_ListModes(NULL, 0)[0]->h / (float)6;
++    pos_button4.w=pos_button4.h;
++    SDL_ANDROID_SetScreenKeyboardButtonPos(SDL_ANDROID_SCREENKEYBOARD_BUTTON_3, &pos_button4);
++    pos_button5.x = pos_x_button5*(SDL_ListModes(NULL, 0)[0]->w/(float)480);
++    pos_button5.y = pos_y_button5*(SDL_ListModes(NULL, 0)[0]->h/(float)360);
++    pos_button5.h=SDL_ListModes(NULL, 0)[0]->h / (float)6;
++    pos_button5.w=pos_button5.h;
++    SDL_ANDROID_SetScreenKeyboardButtonPos(SDL_ANDROID_SCREENKEYBOARD_BUTTON_4, &pos_button5);*/
++}
++#endif
++
+ static video_canvas_t *sdl_canvas_create(video_canvas_t *canvas, unsigned int *width, unsigned int *height)
+ {
+     SDL_Surface *new_screen;
+@@ -497,7 +563,7 @@
+         hwscale = 1;
+     }
+ #endif
+-
++    onscreen_position();
+     if (fullscreen) {
+         flags = SDL_FULLSCREEN | SDL_SWSURFACE;
+ 
+@@ -694,7 +760,9 @@
+     if (canvas == sdl_active_canvas) {
+         video_canvas_set_palette(canvas, canvas->palette);
+     }
+-
++#ifdef ANDROID
++    SDL_Flip(new_screen);
++#endif
+     return canvas;
+ }
+ 
+@@ -926,6 +994,9 @@
+ /* Resize window to stored real size */
+ void sdl_video_restore_size(void)
+ {
++#ifdef ANDROID
++  onscreen_position();
++#endif
+     unsigned int w, h;
+ 
+     w = sdl_active_canvas->real_width;
+diff -ru orig/vice-2.4/src/arch/unix/archdep.c vice-2.4/src/arch/unix/archdep.c
+--- orig/vice-2.4/src/arch/unix/archdep.c	2012-10-19 16:40:13.000000000 +0000
++++ vice-2.4/src/arch/unix/archdep.c	2014-12-15 16:28:06.000000000 +0000
+@@ -117,13 +117,13 @@
+ 
+ const char *archdep_boot_path(void)
+ {
+-    if (boot_path == NULL) {
+-        boot_path = findpath(argv0, getenv("PATH"), IOUTIL_ACCESS_X_OK);
+-
+-        /* Remove the program name.  */
+-        *strrchr(boot_path, '/') = '\0';
+-    }
+-
++//    if (boot_path == NULL) {
++//        boot_path = findpath(argv0, getenv("PATH"), IOUTIL_ACCESS_X_OK);
++//
++//        /* Remove the program name.  */
++//        *strrchr(boot_path, '/') = '\0';
++//    }
++boot_path = ".";
+     return boot_path;
+ }
+ 
+diff -ru orig/vice-2.4/src/arch/unix/socketimpl.h vice-2.4/src/arch/unix/socketimpl.h
+--- orig/vice-2.4/src/arch/unix/socketimpl.h	2012-09-25 21:12:04.000000000 +0000
++++ vice-2.4/src/arch/unix/socketimpl.h	2014-12-15 16:28:13.000000000 +0000
+@@ -85,7 +85,7 @@
+ #endif
+ 
+ #ifndef HAVE_IN_ADDR_T
+-typedef unsigned long in_addr_t;
++//typedef unsigned long in_addr_t;
+ #endif
+ 
+ #endif /* #ifdef HAVE_NETWORK */
