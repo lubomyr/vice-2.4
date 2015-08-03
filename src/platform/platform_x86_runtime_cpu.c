@@ -95,9 +95,14 @@ static cpuid_info cpuid_info_ret;
     cx = cpuid_info_ret.regs.ecx;        \
     dx = cpuid_info_ret.regs.edx;
 #else
+/*
 #define cpuid(func, ax, bx, cx, dx) \
     __asm__ __volatile__ ("cpuid":  \
     "=a" (ax), "=b" (bx), "=c" (cx), "=d" (dx) : "a" (func))
+*/
+#include <cpuid.h>
+// Just use system function
+#define cpuid(func, ax, bx, cx, dx) __get_cpuid(func, &ax, &bx, &cx, &dx)
 #endif
 #endif
 #endif
