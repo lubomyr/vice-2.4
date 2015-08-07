@@ -327,12 +327,7 @@ ui_menu_action_t sdlkbd_press(SDLKey key, SDLMod mod)
     }
 
     if ((int)(key) == sdl_ui_menukeys[0]) {
-#ifdef GUICHAN_GUI
-	extern int gui_open();
-	int err=gui_open();
-#else
         sdl_ui_activate();
-#endif
         return retval;
     }
 

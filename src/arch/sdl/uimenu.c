@@ -351,7 +351,11 @@ static ui_menu_retval_t sdl_ui_menu_item_activate(ui_menu_entry_t *item)
     return MENU_RETVAL_DEFAULT;
 }
 
+#ifdef GUICHAN_GUI
+void sdl_ui_trap(WORD addr, void *data)
+#else
 static void sdl_ui_trap(WORD addr, void *data)
+#endif
 {
     unsigned int width;
     unsigned int height;
@@ -925,7 +929,12 @@ void sdl_ui_activate(void)
     if (ui_emulation_is_paused()) {
         ui_pause_emulation(0);
     }
+#ifdef GUICHAN_GUI
+    extern void guichan_ui_trap(WORD addr, void *data);
+    interrupt_maincpu_trigger_trap(guichan_ui_trap, NULL);
+#else
     interrupt_maincpu_trigger_trap(sdl_ui_trap, NULL);
+#endif
 }
 
 void sdl_ui_clear(void)

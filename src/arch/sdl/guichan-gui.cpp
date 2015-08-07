@@ -250,12 +250,16 @@ public:
 };
 ResumeButtonActionListener* resumeButtonActionListener;
 
+extern "C" {
+    void sdl_ui_trap(WORD addr, void *data);
+}
+
 class SettingButtonActionListener : public gcn::ActionListener
 {
 public:
     void action(const gcn::ActionEvent& actionEvent) {
         running = false;
-        sdl_ui_activate();
+        interrupt_maincpu_trigger_trap(sdl_ui_trap, NULL);
     }
 };
 SettingButtonActionListener* settingButtonActionListener;
@@ -611,10 +615,10 @@ void show_settings()
 }
 
 extern "C" {
-    int gui_open();
+    void guichan_ui_trap(WORD addr, void *data);
 }
 
-int gui_open()
+void guichan_ui_trap(WORD addr, void *data)
 {
     getcwd(launchDir, 250);
     strcpy(currentDir,".");
@@ -634,5 +638,5 @@ int gui_open()
 #endif
     sdl_ui_activate_post_action();
     sdl_video_restore_size();
-    return -1;
+//    return -1;
 }

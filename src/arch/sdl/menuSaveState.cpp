@@ -153,11 +153,11 @@ public:
         if (ss2terms || ssstring.size()<5)
             strcat(savestate_filename, ".vsf");
         window_savestate->setVisible(false);
-        vsync_suspend_speed_eval();
         if (machine_write_snapshot(savestate_filename, save_roms, save_disks, 0) < 0)
             showInfo("Cannot save snapshot image.");
         else
             showInfo("Savestate file saved.");
+	vsync_suspend_speed_eval();
         BuildBaseDir(savestate_filename);
         savestateList = savestate_filename;
 
