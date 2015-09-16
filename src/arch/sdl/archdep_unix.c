@@ -55,6 +55,10 @@
 #include <sys/timers.h>
 #endif
 
+#if defined(__ANDROID__)
+#include <android/log.h>
+#endif
+
 #include "archdep.h"
 #include "findpath.h"
 #include "ioutil.h"
@@ -345,7 +349,7 @@ char *archdep_default_save_resource_file_name(void)
     return fname;
 }
 
-#if defined(MACOSX_COCOA)
+#if defined(MACOSX_COCOA) || defined(__ANDROID__)
 FILE *default_log_file = NULL;
 
 FILE *archdep_open_default_log_file(void)
@@ -384,6 +388,10 @@ int archdep_num_text_columns(void)
 
 int archdep_default_logger(const char *level_string, const char *txt)
 {
+#if defined(__ANDROID__)
+    __android_log_print(ANDROID_LOG_INFO, "VICE", "%s: %s", level_string, txt);
+    return 0;
+#endif
     if (fputs(level_string, stdout) == EOF || fprintf(stdout, "%s", txt) < 0 || fputc('\n', stdout) == EOF) {
         return -1;
     }
