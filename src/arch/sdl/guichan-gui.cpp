@@ -176,6 +176,8 @@ void loadMenu_Init(void);
 void loadMenu_Exit(void);
 void menuMessage_Init(void);
 void menuMessage_Exit(void);
+extern void showInfo(const char *msg, const char *msg2 = "");
+
 std::string selectedFilePath;
 std::string selectedFilePath8;
 std::string selectedFilePath9;
@@ -199,6 +201,8 @@ gcn::Button* button_setting;
 gcn::Button* button_savestate;
 
 gcn::Button* button_getgames;
+gcn::Button* button_quicksave;
+gcn::Button* button_quickload;
 gcn::Button* button_softreset;
 gcn::Button* button_hardreset;
 
@@ -332,6 +336,38 @@ public:
 };
 GetgamesButtonActionListener* getgamesButtonActionListener;
 
+static const char *quicksave_filename = "/savestates/quicksave.vsf";
+
+class QuicksaveButtonActionListener : public gcn::ActionListener
+{
+public:
+    void action(const gcn::ActionEvent& actionEvent) {
+        char fname[1024];
+        vsync_suspend_speed_eval();
+        strcpy(fname, launchDir);
+        strcat(fname, quicksave_filename);
+        printf("%s\n", fname);
+        if (machine_write_snapshot(fname, 1, 1, 0) < 0)
+            showInfo("Cannot save snapshot image.");
+        running = false;
+    }
+};
+QuicksaveButtonActionListener* quicksaveButtonActionListener;
+
+class QuickloadButtonActionListener : public gcn::ActionListener
+{
+public:
+    void action(const gcn::ActionEvent& actionEvent) {
+        char fname[1024];
+        strcpy(fname, launchDir);
+        strcat(fname, quicksave_filename);
+        if (machine_read_snapshot(fname, 0) < 0)
+            showInfo("Cannot read snapshot image.");
+        running = false;
+    }
+};
+QuickloadButtonActionListener* quickloadButtonActionListener;
+
 class SoftresetButtonActionListener : public gcn::ActionListener
 {
 public:
@@ -381,14 +417,14 @@ void init()
     //--------------------------------------------------
 
     button_quit = new gcn::Button("Quit");
-    button_quit->setSize(90,50);
+    button_quit->setSize(100,50);
     button_quit->setBaseColor(baseCol);
     button_quit->setId("Quit");
     quitButtonActionListener = new QuitButtonActionListener();
     button_quit->addActionListener(quitButtonActionListener);
 
     button_start = new gcn::Button("Run");
-    button_start->setSize(90,50);
+    button_start->setSize(100,50);
     button_start->setBaseColor(baseCol);
     button_start->setId("Reset");
     startButtonActionListener = new StartButtonActionListener();
@@ -408,7 +444,7 @@ void init()
     settingButtonActionListener = new SettingButtonActionListener();
     button_setting->addActionListener(settingButtonActionListener);
 
-    button_savestate = new gcn::Button("SaveStates");
+    button_savestate = new gcn::Button("Save States");
     button_savestate->setSize(100,50);
     button_savestate->setBaseColor(baseCol);
     button_savestate->setId("SaveStates");
@@ -417,11 +453,25 @@ void init()
     button_savestate->addActionListener(stateButtonActionListener);
 
     button_getgames = new gcn::Button("Get games and demos");
-    button_getgames->setSize(190,40);
+    button_getgames->setSize(190,50);
     button_getgames->setBaseColor(baseCol);
     button_getgames->setId("GetGames");
     getgamesButtonActionListener = new GetgamesButtonActionListener();
     button_getgames->addActionListener(getgamesButtonActionListener);
+
+    button_quicksave = new gcn::Button("Quick Save");
+    button_quicksave->setSize(100,50);
+    button_quicksave->setBaseColor(baseCol);
+    button_quicksave->setId("QuickSave");
+    quicksaveButtonActionListener = new QuicksaveButtonActionListener();
+    button_quicksave->addActionListener(quicksaveButtonActionListener);
+
+    button_quickload = new gcn::Button("Quick Load");
+    button_quickload->setSize(100,50);
+    button_quickload->setBaseColor(baseCol);
+    button_quickload->setId("QuickLoad");
+    quickloadButtonActionListener = new QuickloadButtonActionListener();
+    button_quickload->addActionListener(quickloadButtonActionListener);
 
     button_softreset = new gcn::Button("Soft Reset");
     button_softreset->setSize(100,35);
@@ -518,14 +568,16 @@ void init()
     //--------------------------------------------------
     top->add(background, 0, 0);
     top->add(button_savestate, 20, 410);
-    top->add(button_start, 180, 410);
+    top->add(button_start, 170, 410);
     top->add(button_resume, 290, 410);
     top->add(button_setting, 400, 410);
     top->add(button_quit, 510, 410);
 
-    top->add(button_getgames, 20, 330);
-    top->add(button_softreset, 505, 290);
-    top->add(button_hardreset, 505, 345);
+    top->add(button_getgames, 420, 30);
+    top->add(button_quicksave, 20, 310);
+    top->add(button_quickload, 170, 310);
+    top->add(button_softreset, 510, 290);
+    top->add(button_hardreset, 510, 345);
 
     top->add(button_df0);
     top->add(textField_df0);
@@ -562,6 +614,8 @@ void halt()
     delete button_setting;
     delete button_savestate;
     delete button_getgames;
+    delete button_quicksave;
+    delete button_quickload;
     delete button_softreset;
     delete button_hardreset;
     delete button_df0;
@@ -584,6 +638,9 @@ void halt()
     delete stateButtonActionListener;
     delete dfxButtonActionListener;
     delete ejectButtonActionListener;
+    delete getgamesButtonActionListener;
+    delete quicksaveButtonActionListener;
+    delete quickloadButtonActionListener;
 
     delete background;
     delete background_image;
