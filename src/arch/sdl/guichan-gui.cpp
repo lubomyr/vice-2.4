@@ -226,7 +226,7 @@ class QuitButtonActionListener : public gcn::ActionListener
 public:
     void action(const gcn::ActionEvent& actionEvent) {
         running = false;
-        exit(0);
+        abort(); //exit(0) crashes on exit, because Vice registers exit handlers
     }
 };
 QuitButtonActionListener* quitButtonActionListener;
@@ -401,10 +401,10 @@ void init()
     resumeButtonActionListener = new ResumeButtonActionListener();
     button_resume->addActionListener(resumeButtonActionListener);
 
-    button_setting = new gcn::Button("Setting");
+    button_setting = new gcn::Button("Settings");
     button_setting->setSize(90,50);
     button_setting->setBaseColor(baseCol);
-    button_setting->setId("Setting");
+    button_setting->setId("Settings");
     settingButtonActionListener = new SettingButtonActionListener();
     button_setting->addActionListener(settingButtonActionListener);
 
