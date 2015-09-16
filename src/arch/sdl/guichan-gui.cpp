@@ -145,6 +145,8 @@ void run()
                     }
                     break;
 #endif
+                default:
+                    break;
                 }
             }
             input->pushInput(event);
@@ -323,7 +325,9 @@ class GetgamesButtonActionListener : public gcn::ActionListener
 {
 public:
     void action(const gcn::ActionEvent& actionEvent) {
+#ifdef __ANDROID__
         SDL_ANDROID_OpenExternalWebBrowser("http://www.c64.com/");
+#endif
     }
 };
 GetgamesButtonActionListener* getgamesButtonActionListener;
@@ -622,7 +626,7 @@ void guichan_ui_trap(WORD addr, void *data)
 {
     getcwd(launchDir, 250);
     strcpy(currentDir,".");
-#ifdef ANDROID
+#ifdef __ANDROID__
     SDL_ANDROID_SetScreenKeyboardShown(0);
 #endif
     sdl_ui_activate_pre_action();
@@ -633,7 +637,7 @@ void guichan_ui_trap(WORD addr, void *data)
     sdl::run();
     widgets::halt();
     sdl::halt();
-#ifdef ANDROID
+#ifdef __ANDROID__
     SDL_ANDROID_SetScreenKeyboardShown(1);
 #endif
     sdl_ui_activate_post_action();
