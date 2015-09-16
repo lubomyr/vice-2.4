@@ -12,7 +12,7 @@ fi
 
 if [ \! -f vice/$1/Makefile ] ; then
 	mkdir -p vice/$1
-	env PATH=`cd .. ; pwd`:$PATH sdl_config=`pwd`/../sdl-config ../setEnvironment-$1.sh sh -c "cd vice/$1 && ../configure --host=$2 --without-x --enable-sdlui --with-sdlsound"
+	env PATH=`cd .. ; pwd`:$PATH sdl_config=`pwd`/../sdl-config ../setEnvironment-$1.sh sh -c "cd vice/$1 && LIBS=-lgnustl_static ../configure --host=$2 --without-x --enable-sdlui --with-sdlsound"
 fi
 
 make -j4 -C vice/$1 && mv -f vice/$1/src/x64 libapplication-$1.so
