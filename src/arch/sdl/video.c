@@ -457,27 +457,28 @@ static void sdl_gl_set_viewport(unsigned int src_w, unsigned int src_h, unsigned
 #ifdef ANDROID
 void onscreen_position()
 {
-    // setup position of on-screen buttons
-    int pos_x_textinput=0;
-    int pos_y_textinput=0;
-    int pos_x_dpad=4;
-    int pos_y_dpad=215;
-    // apply position of on-screen buttons
+    int i;
     SDL_Rect pos_textinput, pos_dpad, pos_button1, pos_button2, pos_button3, pos_button4, pos_button5, pos_button6;
+    // setup position of on-screen buttons
+    if (SDL_ANDROID_GetScreenKeyboardRedefinedByUser())
+        return;
     // Text input at upper-left
-    pos_textinput.x = pos_x_textinput*(SDL_ListModes(NULL, 0)[0]->w/(float)480);
-    pos_textinput.y = pos_y_textinput*(SDL_ListModes(NULL, 0)[0]->h/(float)360);
+    pos_textinput.x = 0;
+    pos_textinput.y = 0;
     pos_textinput.h = SDL_ListModes(NULL, 0)[0]->h / (float)10;
     pos_textinput.w = pos_textinput.h;
     if (SDL_ANDROID_GetScreenKeyboardButtonShown(SDL_ANDROID_SCREENKEYBOARD_BUTTON_TEXT))
         SDL_ANDROID_SetScreenKeyboardButtonPos(SDL_ANDROID_SCREENKEYBOARD_BUTTON_TEXT, &pos_textinput);
     // DPAD is floating, we don't care
-    pos_dpad.x = pos_x_dpad*(SDL_ListModes(NULL, 0)[0]->w/(float)480);
-    pos_dpad.y = pos_y_dpad*(SDL_ListModes(NULL, 0)[0]->h/(float)360);
-    pos_dpad.h = SDL_ListModes(NULL, 0)[0]->h / (float)4;
-    pos_dpad.w = pos_dpad.h;
+    SDL_ANDROID_SetScreenKeyboardButtonPos(SDL_ANDROID_SCREENKEYBOARD_BUTTON_DPAD, &pos_dpad);
+    i = SDL_ListModes(NULL, 0)[0]->h / 4;
+    pos_dpad.x = i;
+    pos_dpad.y = SDL_ListModes(NULL, 0)[0]->h - i * 2;
+    pos_dpad.h = i;
+    pos_dpad.w = i;
     if (SDL_ANDROID_GetScreenKeyboardButtonShown(SDL_ANDROID_SCREENKEYBOARD_BUTTON_DPAD))
         SDL_ANDROID_SetScreenKeyboardButtonPos(SDL_ANDROID_SCREENKEYBOARD_BUTTON_DPAD, &pos_dpad);
+    //SDL_ANDROID_SetScreenKeyboardButtonImagePos(SDL_ANDROID_SCREENKEYBOARD_BUTTON_DPAD, &pos_dpad);
     // Button 1 at the lower-right
     pos_button1.h = SDL_ListModes(NULL, 0)[0]->h / (float)4;
     pos_button1.w = pos_button1.h;
@@ -495,20 +496,31 @@ void onscreen_position()
     // Button 3 next to button 2
     pos_button3.w = pos_button2.w;
     pos_button3.h = pos_button2.h;
-    pos_button3.x = pos_button2.x - pos_button3.w;
+    pos_button3.x = pos_button2.x - pos_button2.w;
     pos_button3.y = pos_button2.y;
     if (SDL_ANDROID_GetScreenKeyboardButtonShown(SDL_ANDROID_SCREENKEYBOARD_BUTTON_2))
         SDL_ANDROID_SetScreenKeyboardButtonPos(SDL_ANDROID_SCREENKEYBOARD_BUTTON_2, &pos_button3);
-/*    pos_button4.x = pos_x_button4*(SDL_ListModes(NULL, 0)[0]->w/(float)480);
-    pos_button4.y = pos_y_button4*(SDL_ListModes(NULL, 0)[0]->h/(float)360);
-    pos_button4.h=SDL_ListModes(NULL, 0)[0]->h / (float)6;
-    pos_button4.w=pos_button4.h;
-    SDL_ANDROID_SetScreenKeyboardButtonPos(SDL_ANDROID_SCREENKEYBOARD_BUTTON_3, &pos_button4);
-    pos_button5.x = pos_x_button5*(SDL_ListModes(NULL, 0)[0]->w/(float)480);
-    pos_button5.y = pos_y_button5*(SDL_ListModes(NULL, 0)[0]->h/(float)360);
-    pos_button5.h=SDL_ListModes(NULL, 0)[0]->h / (float)6;
-    pos_button5.w=pos_button5.h;
-    SDL_ANDROID_SetScreenKeyboardButtonPos(SDL_ANDROID_SCREENKEYBOARD_BUTTON_4, &pos_button5);*/
+    // Button 4 next to button 3
+    pos_button4.w = pos_button3.w;
+    pos_button4.h = pos_button3.h;
+    pos_button4.x = pos_button3.x - pos_button3.w;
+    pos_button4.y = pos_button3.y;
+    if (SDL_ANDROID_GetScreenKeyboardButtonShown(SDL_ANDROID_SCREENKEYBOARD_BUTTON_3))
+        SDL_ANDROID_SetScreenKeyboardButtonPos(SDL_ANDROID_SCREENKEYBOARD_BUTTON_3, &pos_button4);
+    // Button 5 down to button 2
+    pos_button5.w = pos_button2.w;
+    pos_button5.h = pos_button2.h;
+    pos_button5.x = pos_button2.x;
+    pos_button5.y = pos_button2.y - pos_button2.h;
+    if (SDL_ANDROID_GetScreenKeyboardButtonShown(SDL_ANDROID_SCREENKEYBOARD_BUTTON_4))
+        SDL_ANDROID_SetScreenKeyboardButtonPos(SDL_ANDROID_SCREENKEYBOARD_BUTTON_4, &pos_button5);
+    // Button 6 down to button 5
+    pos_button6.w = pos_button5.w;
+    pos_button6.h = pos_button5.h;
+    pos_button6.x = pos_button5.x;
+    pos_button6.y = pos_button5.y - pos_button5.h;
+    if (SDL_ANDROID_GetScreenKeyboardButtonShown(SDL_ANDROID_SCREENKEYBOARD_BUTTON_5))
+        SDL_ANDROID_SetScreenKeyboardButtonPos(SDL_ANDROID_SCREENKEYBOARD_BUTTON_5, &pos_button6);
 }
 #else
 void onscreen_position()

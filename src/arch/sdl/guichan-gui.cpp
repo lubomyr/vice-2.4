@@ -230,7 +230,7 @@ class QuitButtonActionListener : public gcn::ActionListener
 public:
     void action(const gcn::ActionEvent& actionEvent) {
         running = false;
-        abort(); //exit(0) crashes on exit, because Vice registers exit handlers
+        _exit(0); //abort(); //exit(0) crashes on exit, because Vice registers exit handlers
     }
 };
 QuitButtonActionListener* quitButtonActionListener;
