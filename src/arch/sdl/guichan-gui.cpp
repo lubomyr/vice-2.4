@@ -177,6 +177,8 @@ void loadMenu_Exit(void);
 void menuMessage_Init(void);
 void menuMessage_Exit(void);
 extern void showInfo(const char *msg, const char *msg2 = "");
+    
+bool menu_swapJoystick;
 
 std::string selectedFilePath;
 std::string selectedFilePath8;
@@ -205,6 +207,8 @@ gcn::Button* button_quicksave;
 gcn::Button* button_quickload;
 gcn::Button* button_softreset;
 gcn::Button* button_hardreset;
+    
+gcn::CheckBox* checkBox_swapJoystickPorts;
 
 gcn::Button* button_df0;
 gcn::Button* button_df1;
@@ -389,6 +393,21 @@ public:
     }
 };
 HardresetButtonActionListener* hardresetButtonActionListener;
+    
+class CheckBoxActionListener : public gcn::ActionListener
+{
+public:
+    void action(const gcn::ActionEvent& actionEvent) {
+        if (actionEvent.getSource() == checkBox_swapJoystickPorts) {
+            if (checkBox_swapJoystickPorts->isSelected())
+                menu_swapJoystick = true;
+            else
+                menu_swapJoystick = false;
+            sdljoy_swap_ports();
+        }
+    }
+};
+CheckBoxActionListener* checkBoxActionListener;
 
 void init()
 {
@@ -486,6 +505,13 @@ void init()
     button_hardreset->setId("HardReset");
     hardresetButtonActionListener = new HardresetButtonActionListener();
     button_hardreset->addActionListener(hardresetButtonActionListener);
+    
+    checkBox_swapJoystickPorts = new gcn::CheckBox("Swap Joystick Ports");
+    checkBox_swapJoystickPorts->setBaseColor(baseCol);
+    checkBox_swapJoystickPorts->setId("swapJoystickPorts");
+    checkBoxActionListener = new CheckBoxActionListener();
+    checkBox_swapJoystickPorts->addActionListener(checkBoxActionListener);
+    
 
     // Button and text for drives
     button_df0 = new gcn::Button("Drive 8");
@@ -578,6 +604,7 @@ void init()
     top->add(button_quickload, 170, 310);
     top->add(button_softreset, 510, 290);
     top->add(button_hardreset, 510, 345);
+    top->add(checkBox_swapJoystickPorts, 300, 290);
 
     top->add(button_df0);
     top->add(textField_df0);
@@ -595,6 +622,8 @@ void init()
     top->add(window_savestate);
     top->add(window_load, 120, 20);
     top->add(window_warning, 170, 220);
+    
+    show_settings();
 }
 
 
@@ -618,6 +647,7 @@ void halt()
     delete button_quickload;
     delete button_softreset;
     delete button_hardreset;
+    delete checkBox_swapJoystickPorts;
     delete button_df0;
     delete button_df1;
     delete button_df2;
@@ -641,6 +671,7 @@ void halt()
     delete getgamesButtonActionListener;
     delete quicksaveButtonActionListener;
     delete quickloadButtonActionListener;
+    delete checkBoxActionListener;
 
     delete background;
     delete background_image;
@@ -671,6 +702,11 @@ void show_settings()
         textField_df3->setText("insert disk image");
     else
         textField_df3->setText(selectedFilePath11);
+    
+    if (menu_swapJoystick)
+        checkBox_swapJoystickPorts->setSelected(true);
+    else
+        checkBox_swapJoystickPorts->setSelected(false);
 }
 
 }
